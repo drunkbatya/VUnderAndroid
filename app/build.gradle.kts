@@ -39,10 +39,10 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = providers.environmentVariable("VUNDER_KEYSTORE").orNull?.let(::file)
-            storePassword = providers.environmentVariable("VUNDER_KEYSTORE_PASSWORD").orNull
-            keyAlias = providers.environmentVariable("VUNDER_KEY_ALIAS").orNull
-            keyPassword = providers.environmentVariable("VUNDER_KEY_PASSWORD").orNull
+            storeFile = providers.environmentVariable("ANDROID_KEYSTORE").orNull?.let(::file)
+            storePassword = providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD").orNull
+            keyAlias = providers.environmentVariable("ANDROID_KEY_ALIAS").orNull
+            keyPassword = providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD").orNull
         }
     }
 
