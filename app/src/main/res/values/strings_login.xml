@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="login_heading">Sign in to VK</string>
+    <string name="login_subtitle">Music only. Nothing else.</string>
+    <string name="login_field_hint">Phone or email</string>
+    <string name="login_sign_in">Sign in</string>
+    <string name="login_back">Back</string>
+    <string name="login_continue">Continue</string>
+    <string name="login_code_title">Confirmation</string>
+    <string name="login_code_hint">Code</string>
+    <string name="login_send_sms">Send SMS</string>
+    <string name="login_resend">Resend</string>
+    <string name="login_wrong_code">Wrong code</string>
+    <string name="login_code_method_sms">Sending an SMS with the code</string>
+    <string name="login_code_method_callreset">You will receive a call. Enter the last digits of the number</string>
+    <string name="login_code_method_push">Enter the code from the notification in the VK app</string>
+    <string name="login_code_method_codegen">Enter the code from your authenticator app</string>
+    <string name="login_code_method_email">Enter the code sent to your email</string>
+    <string name="login_code_method_reserve_code">Enter one of your reserve codes</string>
+    <string name="login_code_method_other">Enter the confirmation code</string>
+    <string name="login_code_call_sent">Enter the last %1$d digits of the calling number</string>
+    <string name="login_code_call_sent_to">Enter the last %1$d digits of the calling number (%2$s)</string>
+    <string name="login_code_sms_sent">SMS with the code was sent</string>
+    <string name="login_code_sms_sent_to">SMS with the code was sent to %1$s</string>
+    <string name="login_password_title">Password</string>
+    <string name="login_password_prompt">Enter the password for your account</string>
+    <string name="login_password_hint">Password</string>
+</resources>

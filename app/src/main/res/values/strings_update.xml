@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_version_label">%1$s (%2$d)</string>
+    <string name="update_available_title">Update available</string>
+    <string name="update_available_release">%1$s %2$s</string>
+    <string name="update_available_note">The app closes when the install finishes.</string>
+    <string name="update_install">Update</string>
+    <string name="update_skip">Skip this version</string>
+    <string name="update_later">Later</string>
+    <string name="update_up_to_date_title">No updates</string>
+    <string name="update_up_to_date_text">Installed version %1$s is the latest</string>
+    <string name="update_check_failed_title">Update check failed</string>
+    <string name="update_permission_title">Install permission required</string>
+    <string name="update_permission_text">Installing updates requires the Install unknown apps permission for %1$s.</string>
+    <string name="update_open_settings">Open settings</string>
+    <string name="update_downloading_title">Downloading update</string>
+    <string name="update_installing_title">Installing update</string>
+    <string name="update_failed_title">Update failed</string>
+    <string name="update_cancel">Cancel</string>
+    <string name="update_ok">OK</string>
+</resources>

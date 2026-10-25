@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="challenge_captcha_title">Captcha</string>
+    <string name="challenge_captcha_hint">Text from the image</string>
+    <string name="challenge_captcha_image_failed">Captcha image failed to load: %1$s</string>
+    <string name="challenge_continue">Continue</string>
+    <string name="challenge_cancel">Cancel</string>
+    <string name="challenge_verification_title">Verification</string>
+</resources>

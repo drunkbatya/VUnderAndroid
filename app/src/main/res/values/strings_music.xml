@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="download_kind_cache">Save offline</string>
+    <string name="download_kind_music_folder">Download to Music folder</string>
+    <string name="download_kind_save_to">Save to...</string>
+    <string name="track_file_bitrate">%1$d kbps</string>
+    <string name="track_file_hls">HLS</string>
+    <string name="track_file_saved">saved</string>
+
+    <string name="music_page_my_music">My music</string>
+    <string name="music_page_general">General</string>
+    <string name="music_downloads">Downloads</string>
+    <string name="music_back">Back</string>
+    <string name="music_scroll_to_top">Scroll to top</string>
+    <string name="music_general_saved">Saved</string>
+    <string name="music_general_playlists">Playlists</string>
+    <string name="music_general_recommendations">Recommendations</string>
+    <string name="music_general_listened">Listened</string>
+    <string name="music_search_hint">Search</string>
+    <string name="music_filter_hint">Filter</string>
+    <string name="music_clear_query">Clear</string>
+    <string name="music_section_my_music">My music</string>
+    <string name="music_section_search_results">Search results</string>
+    <plurals name="music_track_count">
+        <item quantity="one">%1$d track</item>
+        <item quantity="other">%1$d tracks</item>
+    </plurals>
+    <string name="music_refresh_progress">Loaded %1$d of %2$d</string>
+    <string name="music_empty_library">No tracks yet. Pull down to load your music.</string>
+    <string name="music_searching">Searching...</string>
+    <string name="music_nothing_found_for">Nothing found for \"%1$s\"</string>
+    <string name="music_no_local_matches_online">No matches in your music. Press Search to look everywhere.</string>
+    <string name="music_no_local_matches_offline">No matches in your music. Global search needs internet.</string>
+    <string name="music_nothing_matches">Nothing matches \"%1$s\"</string>
+    <string name="music_loading">Loading...</string>
+    <string name="music_no_internet">No internet connection</string>
+    <string name="music_playlist_empty">Playlist is empty</string>
+    <string name="music_nothing_found">Nothing found</string>
+    <string name="music_pull_to_load">Pull down to load</string>
+    <string name="music_no_saved">No saved tracks</string>
+    <string name="music_no_listened">No listened tracks yet</string>
+    <string name="music_no_playlists">No playlists</string>
+    <string name="music_recommendations_fallback">No personal recommendations yet, showing general ones</string>
+    <string name="music_similar_fallback">Nothing similar found, showing tracks by %1$s</string>
+    <string name="music_track_not_in_list">Track is not in this list anymore</string>
+    <string name="music_added">Added to my music</string>
+    <string name="music_deleted">Deleted from my music</string>
+
+    <string name="track_more">More</string>
+    <string name="track_play_next">Play next</string>
+    <string name="track_add_to_queue">Add to queue</string>
+    <string name="track_show_similar">Show similar</string>
+    <string name="track_remove_offline">Remove from saved</string>
+    <string name="track_add_to_library">Add to my music</string>
+    <string name="track_delete_from_library">Delete from my music</string>
+    <string name="track_delete_confirm">Delete \"%1$s - %2$s\" from my music?</string>
+    <string name="track_delete">Delete</string>
+    <string name="track_cancel">Cancel</string>
+
+    <string name="downloads_title">Downloads</string>
+    <string name="downloads_clear">Clear</string>
+    <string name="downloads_empty">No downloads</string>
+    <string name="downloads_cancel">Cancel</string>
+    <string name="downloads_waiting">%1$s: waiting</string>
+    <string name="downloads_running">%1$s: downloading</string>
+    <string name="downloads_running_percent">%1$s: downloading %2$d%%</string>
+    <string name="downloads_saved_offline">Saved offline</string>
+    <string name="downloads_saved_music_folder">Saved to Music/VUnder/%1$s.mp3</string>
+    <string name="downloads_saved">Saved</string>
+    <string name="downloads_failed">%1$s: failed. %2$s</string>
+    <string name="downloads_cancelled">%1$s: cancelled</string>
+    <string name="music_send_to_conversation">Send to conversation</string>
+    <string name="music_sent_to">Sent to %1$s</string>
+    <string name="music_will_send_to">Will send to %1$s when online</string>
+</resources>

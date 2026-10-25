@@ -15,7 +15,9 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun database(@ApplicationContext context: Context): AppDatabase =
-        Room.databaseBuilder(context, AppDatabase::class.java, "vunder.db").build()
+        Room.databaseBuilder(context, AppDatabase::class.java, "vunder.db")
+            .fallbackToDestructiveMigration(dropAllTables = true)
+            .build()
 
     @Provides
     fun trackDao(database: AppDatabase): TrackDao = database.trackDao()

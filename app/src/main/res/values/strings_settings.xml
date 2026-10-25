@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_music">Music</string>
+    <string name="settings_section_messages">Messages</string>
+    <string name="settings_section_account">Account</string>
+    <string name="settings_section_about">About</string>
+    <string name="settings_section_debug">Debug</string>
+    <string name="settings_history">Listening history</string>
+    <string name="settings_cache_enabled">Save played tracks</string>
+    <string name="settings_cache_only_mine">Only my tracks</string>
+    <string name="settings_mark_as_read">Mark messages as read</string>
+    <string name="settings_prefer_hls">Request HLS streams (v=5.92)</string>
+    <string name="settings_long_poll">Long poll for new messages</string>
+    <string name="settings_sign_out">Sign out</string>
+    <string name="settings_sign_out_confirm">Sign out?</string>
+    <string name="settings_cancel">Cancel</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_check_for_updates">Check for updates</string>
+    <string name="settings_section_cache">Cache</string>
+    <string name="settings_saved_tracks_size">Saved tracks size</string>
+    <string name="settings_remove_saved_tracks">Remove all saved tracks</string>
+    <string name="settings_remove_saved_tracks_confirm">Remove all saved tracks?</string>
+    <string name="settings_remove">Remove</string>
+</resources>
