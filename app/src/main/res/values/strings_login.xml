@@ -4,7 +4,6 @@
     <string name="login_subtitle">Music only. Nothing else.</string>
     <string name="login_field_hint">Phone or email</string>
     <string name="login_sign_in">Sign in</string>
-    <string name="login_back">Back</string>
     <string name="login_continue">Continue</string>
     <string name="login_code_title">Confirmation</string>
     <string name="login_code_hint">Code</string>

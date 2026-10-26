@@ -30,8 +30,8 @@ WORKDIR /workspace
 
 FROM builder AS build
 ADD . /workspace/
-RUN --mount=type=cache,target=/gradle ./gradlew --no-daemon assembleDebug
-RUN ls app/build/outputs/apk/debug/app-debug.apk
+#RUN --mount=type=cache,target=/gradle ./gradlew --no-daemon assembleDebug
+#RUN ls app/build/outputs/apk/debug/app-debug.apk
 
 ENV ANDROID_KEYSTORE=/tmp/keystore
 ENV ANDROID_KEY_ALIAS=vunder
@@ -42,5 +42,5 @@ RUN --mount=type=cache,target=/gradle \
 RUN ls app/build/outputs/apk/release/app-release.apk
 
 FROM scratch AS out
-COPY --from=build /workspace/app/build/outputs/apk/debug/app-debug.apk /
+#COPY --from=build /workspace/app/build/outputs/apk/debug/app-debug.apk /
 COPY --from=build /workspace/app/build/outputs/apk/release/app-release.apk /

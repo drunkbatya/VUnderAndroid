@@ -14,6 +14,7 @@ import com.drunkbatya.vunder.core.model.Playlist
 import com.drunkbatya.vunder.core.model.QueueSource
 import com.drunkbatya.vunder.core.model.Track
 import com.drunkbatya.vunder.core.settings.SettingsRepository
+import com.drunkbatya.vunder.core.settings.Toggle
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -60,7 +61,7 @@ class MusicTabViewModel @Inject constructor(
         private set
 
     val generalRows: StateFlow<List<GeneralRow>> = settingsRepository.settings
-        .map { settings -> GeneralRow.entries.filter { it != GeneralRow.Listened || settings.historyEnabled } }
+        .map { settings -> GeneralRow.entries.filter { it != GeneralRow.Listened || settings[Toggle.History] } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val activeDownloads: StateFlow<Int> = downloads.jobs

@@ -1,6 +1,7 @@
 package com.drunkbatya.vunder.feature.music
 
 import android.util.Log
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.drunkbatya.vunder.R
@@ -8,6 +9,7 @@ import com.drunkbatya.vunder.core.model.Playlist
 import com.drunkbatya.vunder.core.music.AudioApi
 import com.drunkbatya.vunder.core.network.NetworkMonitor
 import com.drunkbatya.vunder.ui.track.UiText
+import com.drunkbatya.vunder.ui.components.trimmedText
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -22,7 +24,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class PlaylistsUiState(
-    val query: String = "",
     val loading: Boolean = false,
     val playlists: List<Playlist> = emptyList(),
     val emptyMessage: UiText? = null,
@@ -41,18 +42,17 @@ class PlaylistsViewModel @AssistedInject constructor(
     private val network: NetworkMonitor,
 ) : ViewModel() {
     private val load = MutableStateFlow(PlaylistsLoad())
-    private val query = MutableStateFlow("")
+    val filterField = TextFieldState()
 
-    val state: StateFlow<PlaylistsUiState> = combine(load, query) { load, query ->
-        val lowered = query.trim().lowercase()
+    val state: StateFlow<PlaylistsUiState> = combine(load, filterField.trimmedText()) { load, query ->
+        val lowered = query.lowercase()
         val all = load.playlists.orEmpty()
         val shown = if (lowered.isEmpty()) all else all.filter { it.title.lowercase().contains(lowered) }
         PlaylistsUiState(
-            query = query,
             loading = load.loading,
             playlists = shown,
             emptyMessage = when {
-                all.isNotEmpty() -> UiText.Resource(R.string.music_nothing_matches, listOf(query.trim()))
+                all.isNotEmpty() -> UiText.Resource(R.string.music_nothing_matches, listOf(query))
                 load.loading -> UiText.Resource(R.string.music_loading)
                 load.failure != null -> load.failure
                 load.playlists != null -> UiText.Resource(R.string.music_no_playlists)
@@ -63,10 +63,6 @@ class PlaylistsViewModel @AssistedInject constructor(
 
     init {
         refresh()
-    }
-
-    fun changeQuery(text: String) {
-        query.value = text
     }
 
     fun refresh() {

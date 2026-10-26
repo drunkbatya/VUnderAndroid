@@ -1,5 +1,7 @@
 package com.drunkbatya.vunder.core.di
 
+import androidx.media3.datasource.okhttp.OkHttpDataSource
+import com.drunkbatya.vunder.core.network.VkClientIdentity
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,4 +31,10 @@ object CoreModule {
     fun okHttpClient(): OkHttpClient = OkHttpClient.Builder()
         .callTimeout(30, TimeUnit.SECONDS)
         .build()
+
+    @Provides
+    @Singleton
+    fun streamingDataSource(httpClient: OkHttpClient): OkHttpDataSource.Factory =
+        OkHttpDataSource.Factory(httpClient.newBuilder().callTimeout(0, TimeUnit.SECONDS).build())
+            .setUserAgent(VkClientIdentity.userAgent(VkClientIdentity.AppVersion.General))
 }

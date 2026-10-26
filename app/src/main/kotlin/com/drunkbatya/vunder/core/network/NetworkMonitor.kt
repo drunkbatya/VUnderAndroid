@@ -52,7 +52,7 @@ class NetworkMonitor @Inject constructor(
             ?: Connectivity(isConnected = false, isMetered = false)
 
     private fun NetworkCapabilities.toConnectivity() = Connectivity(
-        isConnected = hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED),
+        isConnected = hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET),
         isMetered = !hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED),
     )
 

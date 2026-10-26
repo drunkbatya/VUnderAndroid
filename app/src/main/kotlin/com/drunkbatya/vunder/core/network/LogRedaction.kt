@@ -6,7 +6,7 @@ import kotlinx.serialization.json.JsonPrimitive
 
 object LogRedaction {
     private val secretKeyFragments = listOf("token", "secret", "hash", "password", "sig")
-    private val hiddenKeys = setOf("password", "sig", "client_secret")
+    private val hiddenKeys = setOf("password", "sig", "client_secret", "code", "captcha_key", "login", "username", "message")
 
     fun parameters(parameters: List<Pair<String, String>>): String =
         parameters.joinToString("&") { (key, value) -> "$key=${value(value, key)}" }

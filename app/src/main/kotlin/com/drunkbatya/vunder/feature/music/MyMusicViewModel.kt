@@ -1,6 +1,9 @@
 package com.drunkbatya.vunder.feature.music
 
 import android.util.Log
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.drunkbatya.vunder.R
@@ -12,11 +15,13 @@ import com.drunkbatya.vunder.core.network.NetworkMonitor
 import com.drunkbatya.vunder.ui.track.TrackListUiState
 import com.drunkbatya.vunder.ui.track.TrackSection
 import com.drunkbatya.vunder.ui.track.UiText
+import com.drunkbatya.vunder.ui.components.trimmedText
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -24,6 +29,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -32,7 +38,6 @@ import kotlinx.coroutines.launch
 data class LibraryRefresh(val loaded: Int = 0, val total: Int = 0)
 
 data class MyMusicUiState(
-    val query: String = "",
     val refresh: LibraryRefresh? = null,
     val trackCount: Int = 0,
     val list: TrackListUiState = TrackListUiState(),
@@ -53,7 +58,7 @@ class MyMusicViewModel @AssistedInject constructor(
     private val network: NetworkMonitor,
 ) : ViewModel() {
     private val libraryTracks = MutableStateFlow<List<Track>?>(null)
-    private val query = MutableStateFlow("")
+    val searchField = TextFieldState()
     private val search = MutableStateFlow(GlobalSearch())
     private val refresh = MutableStateFlow<LibraryRefresh?>(null)
     private val pendingReveal = MutableStateFlow<Track?>(null)
@@ -63,10 +68,14 @@ class MyMusicViewModel @AssistedInject constructor(
     private val noticeChannel = Channel<UiText>(Channel.BUFFERED)
     val notices: Flow<UiText> = noticeChannel.receiveAsFlow()
 
-    val state: StateFlow<MyMusicUiState> = combine(libraryTracks, query, search, refresh, pendingReveal) { tracks, query, search, refresh, reveal ->
-        val trimmed = query.trim()
+    val state: StateFlow<MyMusicUiState> = combine(
+        libraryTracks,
+        searchField.trimmedText(),
+        search,
+        refresh,
+        pendingReveal,
+    ) { tracks, trimmed, search, refresh, reveal ->
         MyMusicUiState(
-            query = query,
             refresh = refresh,
             trackCount = if (trimmed.isEmpty()) tracks.orEmpty().size else 0,
             list = if (trimmed.isEmpty()) {
@@ -79,7 +88,7 @@ class MyMusicViewModel @AssistedInject constructor(
                 searchList(tracks.orEmpty(), trimmed, search, reveal)
             },
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MyMusicUiState())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MyMusicUiState())
 
     init {
         viewModelScope.launch {
@@ -93,15 +102,8 @@ class MyMusicViewModel @AssistedInject constructor(
         }
     }
 
-    fun changeQuery(text: String) {
-        query.value = text
-        searchJob?.cancel()
-        searchJob = null
-        search.value = GlobalSearch()
-    }
-
     fun searchEverywhere() {
-        val trimmed = query.value.trim()
+        val trimmed = searchField.text.trim().toString()
         if (trimmed.isEmpty()) return
         if (!network.isConnected) {
             pendingReveal.value = null
@@ -115,7 +117,7 @@ class MyMusicViewModel @AssistedInject constructor(
 
     fun loadMore() {
         val current = search.value
-        if (current.query.isEmpty() || current.query != query.value.trim() || current.exhausted || current.searching) return
+        if (current.query.isEmpty() || current.query != searchField.text.trim().toString() || current.exhausted || current.searching) return
         loadSearchPage()
     }
 
@@ -143,11 +145,11 @@ class MyMusicViewModel @AssistedInject constructor(
 
     fun reveal(source: QueueSource, track: Track) {
         if (source is QueueSource.Search) {
-            changeQuery(source.query)
+            searchField.setTextAndPlaceCursorAtEnd(source.query)
             pendingReveal.value = track
             searchEverywhere()
         } else {
-            changeQuery("")
+            searchField.clearText()
             pendingReveal.value = track
         }
     }

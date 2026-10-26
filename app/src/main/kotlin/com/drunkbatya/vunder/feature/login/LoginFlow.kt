@@ -5,12 +5,12 @@ import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.ui.NavDisplay
+import com.drunkbatya.vunder.ui.navigation.StackNavDisplay
 
 @Composable
 fun LoginFlow(viewModel: LoginViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    NavDisplay(
+    StackNavDisplay(
         backStack = state.backStack,
         onBack = viewModel::cancel,
         entryProvider = entryProvider {

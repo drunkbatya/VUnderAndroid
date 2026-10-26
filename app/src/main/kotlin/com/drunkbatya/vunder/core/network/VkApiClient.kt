@@ -22,7 +22,7 @@ import okhttp3.Request
 class VkApiClient @Inject constructor(
     private val httpClient: OkHttpClient,
     private val sessionStore: SessionStore,
-    private val challengeHandler: ChallengeHandler,
+    private val challenges: ChallengeCoordinator,
 ) {
     private val refreshMutex = Mutex()
 
@@ -82,16 +82,20 @@ class VkApiClient @Inject constructor(
 
         Log.d(TAG, "-> ${request.method} ${LogRedaction.parameters(bodyParameters)} bearer=${bearer != null}")
         val startedAt = TimeSource.Monotonic.markNow()
-        val (status, body) = withContext(Dispatchers.IO) {
-            httpClient.newCall(httpRequest).execute().use { it.code to it.body.string() }
+        val reply = withContext(Dispatchers.IO) {
+            httpClient.newCall(httpRequest).execute().use { response ->
+                val body = response.body.string()
+                HttpReply(response.code, body.length, runCatching { Json.parseToJsonElement(body).asObject }.getOrNull())
+            }
         }
         val elapsed = startedAt.elapsedNow().inWholeMilliseconds
-        val json = runCatching { Json.parseToJsonElement(body).asObject }.getOrNull() ?: run {
-            Log.e(TAG, "<- ${request.method} http=$status ${elapsed}ms malformed body ${body.length} chars")
+        val status = reply.status
+        val json = reply.json ?: run {
+            Log.e(TAG, "<- ${request.method} http=$status ${elapsed}ms malformed body ${reply.length} chars")
             throw VkApiException.MalformedResponse(request.method)
         }
         val errorJson = json.obj("error") ?: run {
-            Log.d(TAG, "<- ${request.method} http=$status ${elapsed}ms ${body.length} chars")
+            Log.d(TAG, "<- ${request.method} http=$status ${elapsed}ms ${reply.length} chars")
             return json
         }
         val error = VkApiError.from(errorJson)
@@ -104,12 +108,12 @@ class VkApiClient @Inject constructor(
         }
         if (error.code == 14 && error.captchaSid != null && error.captchaImageUrl != null) {
             Log.i(TAG, "captcha required for ${request.method} sid=${error.captchaSid}")
-            val key = challengeHandler.solveCaptcha(error.captchaImageUrl)
+            val key = challenges.solveCaptcha(error.captchaImageUrl)
             return call(request, Captcha(error.captchaSid, key), retriedAfterRefresh)
         }
         if (error.code == 17 && error.redirectUrl != null) {
             Log.i(TAG, "validation required for ${request.method} url=${error.redirectUrl}")
-            challengeHandler.completeValidation(error.redirectUrl)
+            challenges.completeValidation(error.redirectUrl)
             return call(request, captcha, retriedAfterRefresh)
         }
         throw VkApiException.Api(error)
@@ -156,6 +160,8 @@ class VkApiClient @Inject constructor(
     }
 
     private data class Captcha(val sid: String, val key: String)
+
+    private class HttpReply(val status: Int, val length: Int, val json: JsonObject?)
 
     companion object {
         private const val TAG = "VkApi"

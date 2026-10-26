@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material3.Badge
@@ -31,7 +31,6 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -43,9 +42,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.drunkbatya.vunder.R
 import com.drunkbatya.vunder.core.model.Playlist
+import com.drunkbatya.vunder.ui.components.BackTopBar
+import com.drunkbatya.vunder.ui.components.SearchField
+import com.drunkbatya.vunder.ui.components.StatusText
 import com.drunkbatya.vunder.ui.track.CoverImage
-import com.drunkbatya.vunder.ui.track.EmptyMessage
-import com.drunkbatya.vunder.ui.track.FilterField
 import com.drunkbatya.vunder.ui.track.TrackList
 import com.drunkbatya.vunder.ui.track.TrackListActions
 import com.drunkbatya.vunder.ui.track.resolve
@@ -93,15 +93,15 @@ internal fun MusicRootScreen(
 @Composable
 internal fun MyMusicContent(
     state: MyMusicUiState,
+    searchField: TextFieldState,
     actions: TrackListActions,
-    onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     onRefresh: () -> Unit,
     onLoadMore: () -> Unit,
     onRevealHandled: (Boolean) -> Unit,
 ) {
     Column {
-        FilterField(state.query, onQueryChange, R.string.music_search_hint, onSearch = onSearch)
+        SearchField(searchField, stringResource(R.string.music_search_hint), onSearch = onSearch)
         RefreshableBox(refreshing = state.refresh != null, onRefresh = onRefresh) {
             TrackList(
                 state = state.list,
@@ -147,15 +147,15 @@ internal fun GeneralContent(rows: List<GeneralRow>, onOpen: (GeneralRow) -> Unit
 internal fun FilterableTrackListScreen(
     title: String,
     state: FilterableTrackListUiState,
+    filterField: TextFieldState,
     actions: TrackListActions,
-    onQueryChange: (String) -> Unit,
     onRevealHandled: (Boolean) -> Unit,
     onBack: () -> Unit,
     onRefresh: (() -> Unit)?,
 ) {
     Scaffold(topBar = { BackTopBar(title, onBack) }) { padding ->
         Column(Modifier.padding(padding)) {
-            FilterField(state.query, onQueryChange, R.string.music_filter_hint)
+            SearchField(filterField, stringResource(R.string.music_filter_hint))
             RefreshableBox(refreshing = state.loading, onRefresh = onRefresh) {
                 TrackList(state.list, actions, onRevealHandled)
             }
@@ -166,14 +166,14 @@ internal fun FilterableTrackListScreen(
 @Composable
 internal fun PlaylistsScreen(
     state: PlaylistsUiState,
-    onQueryChange: (String) -> Unit,
+    filterField: TextFieldState,
     onRefresh: () -> Unit,
     onOpen: (Playlist) -> Unit,
     onBack: () -> Unit,
 ) {
     Scaffold(topBar = { BackTopBar(stringResource(R.string.music_general_playlists), onBack) }) { padding ->
         Column(Modifier.padding(padding)) {
-            FilterField(state.query, onQueryChange, R.string.music_filter_hint)
+            SearchField(filterField, stringResource(R.string.music_filter_hint))
             RefreshableBox(refreshing = state.loading, onRefresh = onRefresh) {
                 LazyColumn(Modifier.fillMaxSize()) {
                     items(state.playlists, key = { "${it.ownerId}_${it.id}" }) { playlist ->
@@ -189,23 +189,10 @@ internal fun PlaylistsScreen(
                     }
                 }
                 val message = state.emptyMessage
-                if (state.playlists.isEmpty() && message != null) EmptyMessage(message.resolve())
+                if (state.playlists.isEmpty() && message != null) StatusText(message.resolve())
             }
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun BackTopBar(title: String, onBack: () -> Unit) {
-    TopAppBar(
-        title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.music_back))
-            }
-        },
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

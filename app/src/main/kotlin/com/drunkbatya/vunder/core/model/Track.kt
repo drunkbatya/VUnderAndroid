@@ -42,7 +42,7 @@ data class Track(
         artist.lowercase().contains(loweredQuery) || title.lowercase().contains(loweredQuery)
 
     companion object {
-        private const val EXPLICIT_MARKER = " Ⓔ"
+        private const val EXPLICIT_MARKER = " \u24BA"
         private const val UNAVAILABLE_URL_FRAGMENT = "audio_api_unavailable.mp3"
         private val duplicatedSuffix = Regex(""" \((.+)\) \(\1\)$""")
 

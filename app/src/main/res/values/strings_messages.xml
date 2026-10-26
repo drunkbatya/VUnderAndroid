@@ -2,7 +2,6 @@
 <resources>
     <string name="messages_title">Messages</string>
     <string name="messages_compose">New message</string>
-    <string name="messages_back">Back</string>
     <string name="messages_loading">Loading...</string>
     <string name="messages_no_internet">No internet connection</string>
     <string name="messages_no_conversations">No conversations</string>
@@ -21,19 +20,12 @@
     <string name="messages_not_sent">Not sent: %1$s</string>
     <string name="messages_queued">Message is queued</string>
     <string name="messages_retry">Retry</string>
-    <string name="messages_delete">Delete</string>
     <string name="messages_input_hint">Message</string>
     <string name="messages_attach_audio">Attach audio</string>
     <string name="messages_send">Send</string>
     <string name="messages_remove_attachment">Remove attachment</string>
     <string name="messages_voice">Voice message %1$s</string>
     <string name="messages_other_attachment">[%1$s]</string>
-    <string name="messages_play_next">Play next</string>
-    <string name="messages_add_to_queue">Add to queue</string>
-    <string name="messages_add_to_library">Add to my music</string>
-    <string name="messages_save_offline">Save offline</string>
-    <string name="messages_added_to_library">Added to my music</string>
-    <string name="messages_add_to_library_failed">Adding to my music failed: %1$s</string>
     <string name="messages_track_not_in_chat">Track is not in this chat anymore</string>
     <string name="messages_attach">Attach</string>
     <string name="messages_attach_count">Attach (%1$d)</string>

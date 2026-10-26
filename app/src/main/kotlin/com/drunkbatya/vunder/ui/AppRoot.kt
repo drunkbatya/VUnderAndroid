@@ -7,6 +7,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.drunkbatya.vunder.feature.login.LoginFlow
 import com.drunkbatya.vunder.ui.challenge.ChallengeHost
 import com.drunkbatya.vunder.ui.main.MainScreen
+import com.drunkbatya.vunder.ui.update.UpdateHost
 
 @Composable
 fun AppRoot(viewModel: AppViewModel = hiltViewModel()) {
@@ -14,7 +15,10 @@ fun AppRoot(viewModel: AppViewModel = hiltViewModel()) {
     when (val current = state) {
         AppState.Loading -> Unit
         AppState.SignedOut -> LoginFlow()
-        is AppState.SignedIn -> MainScreen(userId = current.userId)
+        is AppState.SignedIn -> AccountScope(viewModel.accountViewModelStore(current.userId)) {
+            MainScreen(userId = current.userId)
+        }
     }
     ChallengeHost()
+    UpdateHost()
 }
