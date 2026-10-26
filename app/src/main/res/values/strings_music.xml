@@ -52,6 +52,8 @@
     <string name="track_delete_from_library">Delete from my music</string>
     <string name="track_delete_confirm">Delete \"%1$s - %2$s\" from my music?</string>
     <string name="track_delete">Delete</string>
+    <string name="track_download_confirm">Download \"%1$s - %2$s\" to Music folder?</string>
+    <string name="track_download">Download</string>
     <string name="track_cancel">Cancel</string>
 
     <string name="downloads_title">Downloads</string>
