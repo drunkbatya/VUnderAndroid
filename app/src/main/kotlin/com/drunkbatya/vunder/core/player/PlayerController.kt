@@ -21,6 +21,7 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.drunkbatya.vunder.core.cache.AudioCache
@@ -70,7 +71,12 @@ class PlayerController @Inject constructor(
 
     internal val exoPlayer: ExoPlayer = ExoPlayer.Builder(context)
         .setLooper(Looper.getMainLooper())
-        .setMediaSourceFactory(DefaultMediaSourceFactory(DefaultDataSource.Factory(context, streamingDataSource)))
+        .setMediaSourceFactory(
+            DefaultMediaSourceFactory(
+                DefaultDataSource.Factory(context, streamingDataSource),
+                DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true),
+            ),
+        )
         .setAudioAttributes(
             AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),
             true,

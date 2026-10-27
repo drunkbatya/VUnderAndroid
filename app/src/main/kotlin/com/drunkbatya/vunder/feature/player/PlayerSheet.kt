@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
@@ -67,6 +65,7 @@ import com.drunkbatya.vunder.ui.track.NoticeToasts
 import com.drunkbatya.vunder.ui.track.TrackActionsViewModel
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +78,6 @@ internal fun PlayerSheet(
     onDismiss: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val progress by viewModel.progress.collectAsStateWithLifecycle()
     val encoding by viewModel.encoding.collectAsStateWithLifecycle()
     val decorations by trackActions.decorations.collectAsStateWithLifecycle()
     val canDownload by viewModel.canDownload.collectAsStateWithLifecycle()
@@ -98,7 +96,7 @@ internal fun PlayerSheet(
             track = track,
             cover = trackActions.cover(track),
             state = state,
-            progress = progress,
+            progress = viewModel.progress,
             encoding = encoding?.formatted(context),
             membership = decorations.library.membership(track),
             onJumpToSource = { source -> onJumpToSource(source, track) },
@@ -130,7 +128,7 @@ private fun PlayerContent(
     track: Track,
     cover: Any?,
     state: PlayerState,
-    progress: PlaybackProgress,
+    progress: StateFlow<PlaybackProgress>,
     encoding: String?,
     membership: LibraryMembership,
     onJumpToSource: (QueueSource) -> Unit,
@@ -149,13 +147,8 @@ private fun PlayerContent(
 ) {
     val secondary = MaterialTheme.colorScheme.onSurfaceVariant
     val accent = MaterialTheme.colorScheme.primary
-    var seekingSeconds by remember { mutableStateOf<Float?>(null) }
-    val durationSeconds = progress.duration.inWholeSeconds.toFloat()
-    val positionSeconds = seekingSeconds ?: progress.position.inWholeSeconds.toFloat()
-
     Column(
         Modifier
-            .verticalScroll(rememberScrollState())
             .navigationBarsPadding()
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -166,7 +159,7 @@ private fun PlayerContent(
             if (source != null) Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
         }
         Spacer(Modifier.height(8.dp))
-        CoverImage(cover, size = 320.dp, modifier = Modifier.fillMaxWidth().aspectRatio(1f))
+        CoverImage(cover, size = 320.dp, modifier = Modifier.weight(1f, fill = false).aspectRatio(1f))
         Spacer(Modifier.height(24.dp))
         Text(
             track.title,
@@ -185,24 +178,7 @@ private fun PlayerContent(
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(16.dp))
-        Slider(
-            value = positionSeconds.coerceIn(0f, durationSeconds.coerceAtLeast(1f)),
-            onValueChange = { seekingSeconds = it },
-            onValueChangeFinished = {
-                seekingSeconds?.let { onSeek(it.toDouble().seconds) }
-                seekingSeconds = null
-            },
-            valueRange = 0f..durationSeconds.coerceAtLeast(1f),
-        )
-        Row(Modifier.fillMaxWidth()) {
-            val timeStyle = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum")
-            Text(formatDuration(positionSeconds.toInt()), style = timeStyle, color = secondary, modifier = Modifier.weight(1f))
-            Text(
-                "-" + formatDuration((durationSeconds - positionSeconds).toInt().coerceAtLeast(0)),
-                style = timeStyle,
-                color = secondary,
-            )
-        }
+        SeekBar(progress, onSeek)
         Spacer(Modifier.height(16.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(24.dp)) {
             IconButton(onClick = onPrevious, modifier = Modifier.size(64.dp)) {
@@ -248,5 +224,28 @@ private fun PlayerContent(
 private fun ModeButton(icon: ImageVector, @StringRes description: Int, tint: Color, onClick: () -> Unit, enabled: Boolean = true) {
     IconButton(onClick = onClick, enabled = enabled) {
         Icon(icon, contentDescription = stringResource(description), tint = if (enabled) tint else tint.copy(alpha = 0.38f))
+    }
+}
+
+@Composable
+private fun SeekBar(progress: StateFlow<PlaybackProgress>, onSeek: (Duration) -> Unit) {
+    val current by progress.collectAsStateWithLifecycle()
+    var seekingSeconds by remember { mutableStateOf<Float?>(null) }
+    val durationSeconds = current.duration.inWholeSeconds.toFloat().coerceAtLeast(1f)
+    val positionSeconds = seekingSeconds ?: current.position.inWholeSeconds.toFloat()
+    Slider(
+        value = positionSeconds.coerceIn(0f, durationSeconds),
+        onValueChange = { seekingSeconds = it },
+        onValueChangeFinished = {
+            seekingSeconds?.let { onSeek(it.toDouble().seconds) }
+            seekingSeconds = null
+        },
+        valueRange = 0f..durationSeconds,
+    )
+    Row(Modifier.fillMaxWidth()) {
+        val timeStyle = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum")
+        val secondary = MaterialTheme.colorScheme.onSurfaceVariant
+        Text(formatDuration(positionSeconds.toInt()), style = timeStyle, color = secondary, modifier = Modifier.weight(1f))
+        Text("-" + formatDuration((durationSeconds - positionSeconds).toInt().coerceAtLeast(0)), style = timeStyle, color = secondary)
     }
 }
