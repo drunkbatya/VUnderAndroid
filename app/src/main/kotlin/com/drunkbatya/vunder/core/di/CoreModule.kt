@@ -1,7 +1,7 @@
 package com.drunkbatya.vunder.core.di
 
 import androidx.media3.datasource.okhttp.OkHttpDataSource
-import com.drunkbatya.vunder.core.network.SessionCookieJar
+import com.drunkbatya.vunder.core.network.PersistentCookieJar
 import com.drunkbatya.vunder.core.network.VkClientIdentity
 import dagger.Module
 import dagger.Provides
@@ -29,9 +29,9 @@ object CoreModule {
 
     @Provides
     @Singleton
-    fun okHttpClient(): OkHttpClient = OkHttpClient.Builder()
+    fun okHttpClient(cookieJar: PersistentCookieJar): OkHttpClient = OkHttpClient.Builder()
         .callTimeout(30, TimeUnit.SECONDS)
-        .cookieJar(SessionCookieJar())
+        .cookieJar(cookieJar)
         .build()
 
     @Provides
