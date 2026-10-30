@@ -41,7 +41,7 @@ jobs:
               --secret "id=keystore,type=file,src=${{ steps.keystore.outputs.file }}" \
               --secret "id=keystorepass,env=KEYSTORE_PASSWORD" \
               --output type=local,dest=./build .
-          cp build/app-release.apk "build/{{ steps.name.outputs.name }}-{{ steps.name.outputs.version }}.apk"
+          cp build/app-release.apk "build/${{ steps.name.outputs.name }}-${{ steps.name.outputs.version }}.apk"
 
       - name: Collect release notes
         run: |
