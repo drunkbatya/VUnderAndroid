@@ -30,6 +30,7 @@ jobs:
       - name: Set name
         id: name
         run: |
+          echo "name=${{ github.event.repository.name }}" >> "$GITHUB_OUTPUT"
           echo "version=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Build APK
@@ -40,7 +41,7 @@ jobs:
               --secret "id=keystore,type=file,src=${{ steps.keystore.outputs.file }}" \
               --secret "id=keystorepass,env=KEYSTORE_PASSWORD" \
               --output type=local,dest=./build .
-          cp build/app-release.apk "build/{{ steps.name.outputs.version }}.apk"
+          cp build/app-release.apk "build/{{ steps.name.outputs.name }}-{{ steps.name.outputs.version }}.apk"
 
       - name: Collect release notes
         run: |
@@ -52,7 +53,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "${{ steps.name.outputs.version }}" \
-            "build/VUnder-${{ steps.name.outputs.version }}.apk" \
+            "build/{{ steps.name.outputs.name }}-${{ steps.name.outputs.version }}.apk" \
             --title "${{ steps.name.outputs.version }}" \
             --notes-file build/notes.md
 
