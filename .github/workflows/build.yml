@@ -53,7 +53,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "${{ steps.name.outputs.version }}" \
-            "build/{{ steps.name.outputs.name }}-${{ steps.name.outputs.version }}.apk" \
+            "build/${{ steps.name.outputs.name }}-${{ steps.name.outputs.version }}.apk" \
             --title "${{ steps.name.outputs.version }}" \
             --notes-file build/notes.md
 
