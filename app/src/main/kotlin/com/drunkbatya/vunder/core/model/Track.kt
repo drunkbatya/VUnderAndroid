@@ -17,6 +17,7 @@ data class Track(
     val url: String? = null,
     val accessKey: String? = null,
     val coverUrl: String? = null,
+    val largeCoverUrl: String? = null,
 ) {
     val key: TrackKey
         get() = TrackKey(ownerId, id)
@@ -36,6 +37,8 @@ data class Track(
     val formattedDuration: String
         get() = formatDuration(duration)
 
+    fun coverUrl(isLarge: Boolean): String? = if (isLarge) largeCoverUrl else coverUrl
+
     fun isSame(other: Track?): Boolean = other != null && key == other.key
 
     fun matches(loweredQuery: String): Boolean =
@@ -51,6 +54,7 @@ data class Track(
             val ownerId = json.long("owner_id") ?: return null
             val rawUrl = json.string("url").orEmpty()
             val thumb = json.obj("album")?.obj("thumb")
+            val coverUrl = thumb?.string("photo_300") ?: thumb?.string("photo_270")
             return Track(
                 ownerId = ownerId,
                 id = id,
@@ -59,7 +63,8 @@ data class Track(
                 duration = json.int("duration") ?: 0,
                 url = rawUrl.takeUnless { it.isEmpty() || UNAVAILABLE_URL_FRAGMENT in it },
                 accessKey = json.string("access_key")?.takeUnless { it.isEmpty() },
-                coverUrl = thumb?.string("photo_300") ?: thumb?.string("photo_270"),
+                coverUrl = coverUrl,
+                largeCoverUrl = thumb?.string("photo_600") ?: thumb?.string("photo_1200") ?: coverUrl,
             )
         }
 

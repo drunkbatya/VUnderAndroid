@@ -18,11 +18,12 @@ data class TrackEntity(
     val url: String?,
     val accessKey: String?,
     val coverUrl: String?,
+    val largeCoverUrl: String?,
     val libraryPosition: Int?,
     val cachedAt: Long?,
 ) {
-    fun toTrack() = Track(ownerId, id, artist, title, duration, url, accessKey, coverUrl)
+    fun toTrack() = Track(ownerId, id, artist, title, duration, url, accessKey, coverUrl, largeCoverUrl)
 }
 
 fun Track.toEntity(libraryPosition: Int? = null, cachedAt: Long? = null) =
-    TrackEntity(ownerId, id, artist, title, duration, url, accessKey, coverUrl, libraryPosition, cachedAt)
+    TrackEntity(ownerId, id, artist, title, duration, url, accessKey, coverUrl, largeCoverUrl, libraryPosition, cachedAt)

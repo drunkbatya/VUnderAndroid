@@ -2,6 +2,8 @@
 <resources>
     <string name="download_kind_cache">Save offline</string>
     <string name="download_kind_music_folder">Download to Music folder</string>
+    <string name="download_kind_icon">Save icon</string>
+    <string name="download_kind_cover">Save cover</string>
     <string name="track_file_bitrate">%1$d kbps</string>
     <string name="track_file_hls">HLS</string>
     <string name="track_file_saved">saved</string>
@@ -64,6 +66,8 @@
     <string name="downloads_running">%1$s: downloading</string>
     <string name="downloads_running_percent">%1$s: downloading %2$d%%</string>
     <string name="downloads_saved_offline">Saved offline</string>
+    <string name="downloads_saved_icon">Icon saved</string>
+    <string name="downloads_saved_cover">Cover saved</string>
     <string name="downloads_saved_music_folder">Saved to Music/VUnder/%1$s.mp3</string>
     <string name="downloads_failed">%1$s: failed. %2$s</string>
     <string name="downloads_cancelled">%1$s: cancelled</string>

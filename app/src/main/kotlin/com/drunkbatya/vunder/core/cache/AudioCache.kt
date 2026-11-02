@@ -62,7 +62,7 @@ class AudioCache @Inject constructor(
 
     fun localFile(track: Track): File? = audioFile(track).takeIf { isCached(track) }
 
-    fun localCover(track: Track): File? = coverFile(track).takeIf { track.coverUrl != null && isCached(track) }
+    fun localCover(track: Track, isLarge: Boolean = false): File? = coverFile(track, isLarge).takeIf { isCached(track) && it.exists() }
 
     suspend fun materialize(track: Track, destination: File, onProgress: (Float) -> Unit) = withContext(Dispatchers.IO) {
         destination.delete()
@@ -107,7 +107,11 @@ class AudioCache @Inject constructor(
             directory.mkdirs()
             Files.move(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
-        storeCover(track)
+        try {
+            storeLargeCover(track)
+        } catch (failure: IOException) {
+            Log.e(TAG, "cover for ${track.storageId} failed: ${failure.message}")
+        }
         library.markCached(track, System.currentTimeMillis())
         Log.i(TAG, "installed ${track.storageId} ${destination.length()} bytes")
     }
@@ -115,7 +119,8 @@ class AudioCache @Inject constructor(
     suspend fun remove(track: Track) {
         withContext(Dispatchers.IO) {
             audioFile(track).delete()
-            coverFile(track).delete()
+            coverFile(track, isLarge = false).delete()
+            coverFile(track, isLarge = true).delete()
         }
         library.markCached(track, null)
         Log.i(TAG, "removed ${track.storageId}")
@@ -138,7 +143,7 @@ class AudioCache @Inject constructor(
         if (missing.isNotEmpty()) library.unmarkCached(missing.values)
         val cached = present intersect marked.keys
         withContext(Dispatchers.IO) {
-            files.filter { it.nameWithoutExtension !in cached }.forEach { file ->
+            files.filter { it.name.substringBefore('.') !in cached }.forEach { file ->
                 if (file.extension == AUDIO_EXTENSION) Log.w(TAG, "orphan file ${file.nameWithoutExtension}, deleting")
                 file.delete()
             }
@@ -146,30 +151,32 @@ class AudioCache @Inject constructor(
         Log.i(TAG, "reconciled cached=${cached.size}")
     }
 
-    private suspend fun storeCover(track: Track) {
-        val url = track.coverUrl ?: return
-        val destination = coverFile(track)
-        try {
-            val size = withContext(Dispatchers.IO) {
-                if (destination.exists()) return@withContext null
-                downloadClient.newCall(request(url)).execute().use { response ->
-                    val bytes = response.body.bytes()
-                    if (response.code != 200 || bytes.isEmpty()) throw DownloadException("cover for ${track.storageId} http=${response.code}")
-                    val partFile = File(directory, "${destination.name}.part")
-                    partFile.writeBytes(bytes)
-                    Files.move(partFile.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING)
-                    bytes.size
-                }
-            } ?: return
-            Log.i(TAG, "cover stored for ${track.storageId} $size bytes")
-        } catch (failure: IOException) {
-            Log.e(TAG, "cover for ${track.storageId} failed: ${failure.message}")
+    suspend fun downloadCover(url: String): ByteArray = withContext(Dispatchers.IO) {
+        downloadClient.newCall(request(url)).execute().use { response ->
+            val bytes = response.body.bytes()
+            if (response.code != 200 || bytes.isEmpty()) throw DownloadException("cover download http=${response.code} bytes=${bytes.size}: $url")
+            bytes
         }
+    }
+
+    suspend fun storeCover(track: Track, isLarge: Boolean, image: ByteArray) = withContext(Dispatchers.IO) {
+        val destination = coverFile(track, isLarge)
+        directory.mkdirs()
+        val partFile = File(directory, "${destination.name}.part")
+        partFile.writeBytes(image)
+        Files.move(partFile.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        Log.i(TAG, "cover stored ${destination.name} ${image.size} bytes")
+    }
+
+    private suspend fun storeLargeCover(track: Track) {
+        val url = track.largeCoverUrl ?: return
+        if (withContext(Dispatchers.IO) { coverFile(track, isLarge = true).exists() }) return
+        storeCover(track, isLarge = true, downloadCover(url))
     }
 
     private fun audioFile(track: Track) = File(directory, "${track.storageId}.$AUDIO_EXTENSION")
 
-    private fun coverFile(track: Track) = File(directory, "${track.storageId}.jpg")
+    private fun coverFile(track: Track, isLarge: Boolean) = File(directory, if (isLarge) "${track.storageId}.large.jpg" else "${track.storageId}.jpg")
 
     private fun request(url: String) = Request.Builder()
         .url(url)

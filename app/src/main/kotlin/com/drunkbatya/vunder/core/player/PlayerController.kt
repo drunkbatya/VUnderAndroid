@@ -25,10 +25,11 @@ import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.drunkbatya.vunder.core.cache.AudioCache
+import com.drunkbatya.vunder.core.cache.DownloadCenter
 import com.drunkbatya.vunder.core.di.ApplicationScope
 import com.drunkbatya.vunder.core.model.QueueSource
 import com.drunkbatya.vunder.core.model.Track
-import com.drunkbatya.vunder.core.music.AudioApi
+import com.drunkbatya.vunder.core.music.TrackUrlRefresher
 import com.drunkbatya.vunder.core.music.TrackLibrary
 import com.drunkbatya.vunder.core.network.NetworkMonitor
 import com.drunkbatya.vunder.core.network.OfflineException
@@ -61,9 +62,10 @@ class PlayerController @Inject constructor(
     @ApplicationContext private val context: Context,
     @ApplicationScope applicationScope: CoroutineScope,
     streamingDataSource: OkHttpDataSource.Factory,
-    private val audioApi: AudioApi,
+    private val urlRefresher: TrackUrlRefresher,
     private val library: TrackLibrary,
     private val cache: AudioCache,
+    private val downloads: DownloadCenter,
     private val settingsRepository: SettingsRepository,
     private val network: NetworkMonitor,
 ) {
@@ -350,6 +352,7 @@ class PlayerController @Inject constructor(
         setStatus(PlaybackStatus.Loading)
         connectSession()
         Log.i(TAG, "start ${track.fullId} ${track.artist} - ${track.title}")
+        saveLargeCover(track)
         loadJob = scope.launch {
             try {
                 val uri = resolveUri(track)
@@ -385,6 +388,19 @@ class PlayerController @Inject constructor(
         startCurrent()
     }
 
+    private fun saveLargeCover(track: Track) {
+        if (!cache.isCached(track) || track.largeCoverUrl == null || !network.isConnected || downloads.isSavingCover(track)) return
+        if (cache.localCover(track, isLarge = true) != null) return
+        scope.launch {
+            try {
+                downloads.saveCover(track, isLarge = true)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: Exception) {
+            }
+        }
+    }
+
     private suspend fun resolveUri(track: Track): Uri? {
         cache.localFile(track)?.let {
             Log.i(TAG, "playing local file for ${track.fullId}")
@@ -393,7 +409,7 @@ class PlayerController @Inject constructor(
         if (!network.isConnected) throw OfflineException()
         track.url?.let { return it.toUri() }
         retriedFreshUrl = true
-        return audioApi.freshUrl(track)?.toUri()
+        return urlRefresher.freshUrl(track)?.toUri()
     }
 
     private fun load(uri: Uri, track: Track) {
@@ -406,7 +422,7 @@ class PlayerController @Inject constructor(
         val metadata = MediaMetadata.Builder()
             .setTitle(track.title)
             .setArtist(track.artist)
-            .setArtworkUri(cache.localCover(track)?.toUri() ?: track.coverUrl?.toUri())
+            .setArtworkUri((cache.localCover(track, isLarge = true) ?: cache.localCover(track))?.toUri() ?: (track.largeCoverUrl ?: track.coverUrl)?.toUri())
             .build()
         return MediaItem.Builder()
             .setMediaId(track.storageId)
@@ -429,7 +445,7 @@ class PlayerController @Inject constructor(
         retriedFreshUrl = true
         loadJob = scope.launch {
             try {
-                val url = audioApi.freshUrl(track)
+                val url = urlRefresher.freshUrl(track)
                 val playing = loadedTrack?.takeIf { it.isSame(current) } ?: return@launch
                 if (url == null) next() else load(url.toUri(), playing)
             } catch (cancellation: CancellationException) {

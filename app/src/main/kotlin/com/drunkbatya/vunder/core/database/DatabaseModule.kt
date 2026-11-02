@@ -16,6 +16,7 @@ object DatabaseModule {
     @Singleton
     fun database(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "vunder.db")
+            .addMigrations(TrackLargeCoverMigration)
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
 

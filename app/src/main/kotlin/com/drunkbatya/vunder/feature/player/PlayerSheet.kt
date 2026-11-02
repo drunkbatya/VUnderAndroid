@@ -94,7 +94,7 @@ internal fun PlayerSheet(
     ) {
         PlayerContent(
             track = track,
-            cover = trackActions.cover(track),
+            cover = trackActions.largeCover(track),
             state = state,
             progress = viewModel.progress,
             encoding = encoding?.formatted(context),

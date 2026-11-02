@@ -7,8 +7,12 @@ import androidx.annotation.StringRes
 import com.drunkbatya.vunder.R
 import com.drunkbatya.vunder.core.di.ApplicationScope
 import com.drunkbatya.vunder.core.model.Track
+import com.drunkbatya.vunder.core.music.TrackUrlRefresher
+import com.drunkbatya.vunder.core.settings.SettingsRepository
+import com.drunkbatya.vunder.core.settings.Toggle
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
@@ -27,6 +31,8 @@ import kotlinx.coroutines.withContext
 enum class DownloadKind(@StringRes val title: Int) {
     Cache(R.string.download_kind_cache),
     MusicFolder(R.string.download_kind_music_folder),
+    Icon(R.string.download_kind_icon),
+    Cover(R.string.download_kind_cover),
 }
 
 sealed interface DownloadState {
@@ -54,6 +60,8 @@ class DownloadCenter @Inject constructor(
     @ApplicationScope applicationScope: CoroutineScope,
     private val cache: AudioCache,
     private val exporter: TrackExporter,
+    private val urlRefresher: TrackUrlRefresher,
+    private val settingsRepository: SettingsRepository,
 ) {
     private val scope = CoroutineScope(applicationScope.coroutineContext + Dispatchers.Main.immediate)
     private val _jobs = MutableStateFlow<List<DownloadJob>>(emptyList())
@@ -71,6 +79,45 @@ class DownloadCenter @Inject constructor(
         _jobs.update { it + DownloadJob(nextId++, track, kind) }
         Log.i(TAG, "queued $kind ${track.storageId}, active=$activeCount")
         runNext()
+    }
+
+    suspend fun saveCover(track: Track, isLarge: Boolean): ByteArray {
+        val kind = if (isLarge) DownloadKind.Cover else DownloadKind.Icon
+        val url = track.coverUrl(isLarge) ?: throw DownloadException("track ${track.storageId} has no $kind url")
+        val id = startImageJob(track, kind)
+        val image = try {
+            cache.downloadCover(url)
+        } catch (cancellation: CancellationException) {
+            _jobs.update { jobs -> jobs.filterNot { it.id == id } }
+            throw cancellation
+        } catch (failure: IOException) {
+            finishImageJob(id, kind, track, failure.message ?: failure.javaClass.simpleName)
+            throw failure
+        }
+        val storeFailure = try {
+            cache.storeCover(track, isLarge, image)
+            null
+        } catch (failure: IOException) {
+            failure.message ?: failure.javaClass.simpleName
+        }
+        finishImageJob(id, kind, track, storeFailure)
+        return image
+    }
+
+    fun isSavingCover(track: Track): Boolean = jobs.value.any { it.kind == DownloadKind.Cover && it.track.isSame(track) && !it.state.isFinished }
+
+    private suspend fun startImageJob(track: Track, kind: DownloadKind): Long = withContext(Dispatchers.Main.immediate) {
+        val job = DownloadJob(nextId++, track, kind, DownloadState.Running(null))
+        _jobs.update { jobs -> jobs.filterNot { it.kind == kind && it.track.isSame(track) && it.state.isFinished } + job }
+        Log.i(TAG, "started $kind ${track.storageId}")
+        job.id
+    }
+
+    private fun finishImageJob(id: Long, kind: DownloadKind, track: Track, failure: String?) {
+        if (failure != null) Log.e(TAG, "$kind ${track.storageId} failed: $failure")
+        _jobs.update { jobs ->
+            jobs.map { if (it.id == id && it.state is DownloadState.Running) it.copy(state = failure?.let(DownloadState::Failed) ?: DownloadState.Done) else it }
+        }
     }
 
     fun cancel(job: DownloadJob) {
@@ -118,18 +165,15 @@ class DownloadCenter @Inject constructor(
         val partFile = withContext(Dispatchers.IO) { File.createTempFile("download", ".part", context.cacheDir) }
         try {
             var percent = -1
-            cache.materialize(job.track, partFile) { fraction ->
+            val source = materializeWithFreshUrl(job.track, partFile) { fraction ->
                 val newPercent = (fraction * 100).toInt()
-                if (newPercent == percent) return@materialize
+                if (newPercent == percent) return@materializeWithFreshUrl
                 percent = newPercent
                 _jobs.update { jobs ->
                     jobs.map { if (it.id == job.id && it.state is DownloadState.Running) it.copy(state = DownloadState.Running(fraction)) else it }
                 }
             }
-            when (job.kind) {
-                DownloadKind.Cache -> cache.install(job.track, partFile)
-                DownloadKind.MusicFolder -> exporter.placeInMusicFolder(partFile, job.track)
-            }
+            if (job.kind == DownloadKind.Cache) cache.install(source, partFile) else exporter.placeInMusicFolder(partFile, source)
             setState(job.id, DownloadState.Done)
         } catch (cancellation: CancellationException) {
             throw cancellation
@@ -140,6 +184,38 @@ class DownloadCenter @Inject constructor(
             }
         } finally {
             partFile.delete()
+        }
+    }
+
+    private suspend fun materializeWithFreshUrl(track: Track, partFile: File, onProgress: (Float) -> Unit): Track {
+        if (cache.isCached(track)) {
+            cache.materialize(track, partFile, onProgress)
+            return track
+        }
+        val stored = track.copy(url = urlRefresher.storedUrl(track))
+        val preferHls = settingsRepository.current()[Toggle.PreferHls]
+        val formatMatches = stored.url != null && stored.isHls == preferHls
+        val source = if (formatMatches) stored else freshTrack(stored, "hls=${stored.isHls} preferHls=$preferHls") ?: stored
+        try {
+            cache.materialize(source, partFile, onProgress)
+            return source
+        } catch (failure: IOException) {
+            if (source !== stored) throw failure
+            val fresh = freshTrack(stored, failure.message.orEmpty()) ?: throw failure
+            cache.materialize(fresh, partFile, onProgress)
+            return fresh
+        }
+    }
+
+    private suspend fun freshTrack(track: Track, reason: String): Track? {
+        Log.i(TAG, "${track.storageId} requesting fresh url: $reason")
+        return try {
+            urlRefresher.freshUrl(track)?.let { track.copy(url = it) }
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (failure: Exception) {
+            Log.e(TAG, "${track.storageId} fresh url failed: ${failure.message}")
+            null
         }
     }
 

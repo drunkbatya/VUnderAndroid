@@ -7,6 +7,7 @@ import com.drunkbatya.vunder.R
 import com.drunkbatya.vunder.core.cache.AudioCache
 import com.drunkbatya.vunder.core.cache.DownloadCenter
 import com.drunkbatya.vunder.core.cache.DownloadKind
+import com.drunkbatya.vunder.core.cache.SavedTrackCover
 import com.drunkbatya.vunder.core.messaging.Outbox
 import com.drunkbatya.vunder.core.model.QueueSource
 import com.drunkbatya.vunder.core.model.Track
@@ -58,7 +59,15 @@ class TrackActionsViewModel @Inject constructor(
     private val noticeChannel = Channel<UiText>(Channel.BUFFERED)
     val notices: Flow<UiText> = noticeChannel.receiveAsFlow()
 
-    fun cover(track: Track): Any? = cache.localCover(track) ?: track.coverUrl
+    fun cover(track: Track): Any? = cache.localCover(track) ?: savedTrackCover(track, isLarge = false) ?: track.coverUrl
+
+    fun largeCover(track: Track): Any? = cache.localCover(track, isLarge = true)
+        ?: track.largeCoverUrl?.takeIf { network.isConnected }
+        ?: cache.localCover(track)
+        ?: track.coverUrl
+
+    private fun savedTrackCover(track: Track, isLarge: Boolean): SavedTrackCover? =
+        SavedTrackCover(track, isLarge).takeIf { cache.isCached(track) && track.coverUrl(isLarge) != null && network.isConnected }
 
     fun play(track: Track, tracks: List<Track>, source: QueueSource) = player.play(track, tracks, source)
 

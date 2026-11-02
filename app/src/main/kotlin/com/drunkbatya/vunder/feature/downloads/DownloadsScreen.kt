@@ -1,6 +1,7 @@
 package com.drunkbatya.vunder.feature.downloads
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -79,13 +80,12 @@ private fun DownloadRow(job: DownloadJob, onCancel: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("${job.track.artist} - ${job.track.title}", style = MaterialTheme.typography.bodyLarge, maxLines = 2)
-            Text(
-                statusText(job),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-            )
+            SelectionContainer {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("${job.track.artist} - ${job.track.title}", style = MaterialTheme.typography.bodyLarge)
+                    Text(statusText(job), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
             val state = job.state
             if (state is DownloadState.Running) {
                 val fraction = state.fraction
@@ -96,7 +96,7 @@ private fun DownloadRow(job: DownloadJob, onCancel: () -> Unit) {
                 }
             }
         }
-        if (!job.state.isFinished) {
+        if (!job.state.isFinished && job.kind != DownloadKind.Cover && job.kind != DownloadKind.Icon) {
             IconButton(onClick = onCancel) {
                 Icon(Icons.Rounded.Cancel, contentDescription = stringResource(R.string.downloads_cancel))
             }
@@ -114,6 +114,8 @@ private fun statusText(job: DownloadJob): String {
         DownloadState.Done -> when (job.kind) {
             DownloadKind.Cache -> stringResource(R.string.downloads_saved_offline)
             DownloadKind.MusicFolder -> stringResource(R.string.downloads_saved_music_folder, TrackExporter.fileName(job.track))
+            DownloadKind.Icon -> stringResource(R.string.downloads_saved_icon)
+            DownloadKind.Cover -> stringResource(R.string.downloads_saved_cover)
         }
         is DownloadState.Failed -> stringResource(R.string.downloads_failed, kind, state.message)
         DownloadState.Cancelled -> stringResource(R.string.downloads_cancelled, kind)

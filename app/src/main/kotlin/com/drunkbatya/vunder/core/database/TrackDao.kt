@@ -85,6 +85,12 @@ abstract class TrackDao {
         return deleteTracks()
     }
 
+    @Query("SELECT url FROM track WHERE ownerId = :ownerId AND id = :id")
+    abstract suspend fun url(ownerId: Long, id: Long): String?
+
+    @Query("UPDATE track SET url = :url WHERE ownerId = :ownerId AND id = :id")
+    abstract suspend fun updateUrl(ownerId: Long, id: Long, url: String): Int
+
     @Query("SELECT * FROM track WHERE ownerId = :ownerId AND id = :id")
     protected abstract suspend fun find(ownerId: Long, id: Long): TrackEntity?
 

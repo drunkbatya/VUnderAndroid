@@ -44,6 +44,13 @@ class TrackLibrary @Inject constructor(private val trackDao: TrackDao) {
 
     suspend fun recordListen(track: Track) = trackDao.recordListen(track.toEntity(), System.currentTimeMillis())
 
+    suspend fun storedUrl(track: Track): String? = trackDao.url(track.ownerId, track.id)
+
+    suspend fun updateUrl(track: Track, url: String) {
+        val updated = trackDao.updateUrl(track.ownerId, track.id, url)
+        Log.i(TAG, "url updated ${track.storageId} rows=$updated")
+    }
+
     suspend fun clear() {
         val deleted = trackDao.clear()
         Log.i(TAG, "library cleared, removed $deleted tracks")
