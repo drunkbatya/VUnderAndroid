@@ -5,6 +5,8 @@ import android.util.Log
 import androidx.annotation.MainThread
 import androidx.annotation.StringRes
 import com.drunkbatya.vunder.R
+import com.drunkbatya.vunder.core.audio.AudioCodec
+import com.drunkbatya.vunder.core.audio.Mp3Transcoder
 import com.drunkbatya.vunder.core.di.ApplicationScope
 import com.drunkbatya.vunder.core.model.Track
 import com.drunkbatya.vunder.core.music.TrackUrlRefresher
@@ -28,16 +30,17 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-enum class DownloadKind(@StringRes val title: Int) {
-    Cache(R.string.download_kind_cache),
-    MusicFolder(R.string.download_kind_music_folder),
-    Icon(R.string.download_kind_icon),
-    Cover(R.string.download_kind_cover),
+enum class DownloadKind(@StringRes val title: Int, val isAudio: Boolean) {
+    Cache(R.string.download_kind_cache, isAudio = true),
+    MusicFolder(R.string.download_kind_music_folder, isAudio = true),
+    Icon(R.string.download_kind_icon, isAudio = false),
+    Cover(R.string.download_kind_cover, isAudio = false),
 }
 
 sealed interface DownloadState {
     data object Queued : DownloadState
     data class Running(val fraction: Float?) : DownloadState
+    data class Converting(val fraction: Float?) : DownloadState
     data object Done : DownloadState
     data class Failed(val message: String) : DownloadState
     data object Cancelled : DownloadState
@@ -60,6 +63,7 @@ class DownloadCenter @Inject constructor(
     @ApplicationScope applicationScope: CoroutineScope,
     private val cache: AudioCache,
     private val exporter: TrackExporter,
+    private val transcoder: Mp3Transcoder,
     private val urlRefresher: TrackUrlRefresher,
     private val settingsRepository: SettingsRepository,
 ) {
@@ -164,16 +168,8 @@ class DownloadCenter @Inject constructor(
         }
         val partFile = withContext(Dispatchers.IO) { File.createTempFile("download", ".part", context.cacheDir) }
         try {
-            var percent = -1
-            val source = materializeWithFreshUrl(job.track, partFile) { fraction ->
-                val newPercent = (fraction * 100).toInt()
-                if (newPercent == percent) return@materializeWithFreshUrl
-                percent = newPercent
-                _jobs.update { jobs ->
-                    jobs.map { if (it.id == job.id && it.state is DownloadState.Running) it.copy(state = DownloadState.Running(fraction)) else it }
-                }
-            }
-            if (job.kind == DownloadKind.Cache) cache.install(source, partFile) else exporter.placeInMusicFolder(partFile, source)
+            val source = materializeWithFreshUrl(job.track, partFile, progressReporter(job.id))
+            if (job.kind == DownloadKind.Cache) cache.install(source, partFile) else exportToMusicFolder(job.id, source, partFile)
             setState(job.id, DownloadState.Done)
         } catch (cancellation: CancellationException) {
             throw cancellation
@@ -184,6 +180,59 @@ class DownloadCenter @Inject constructor(
             }
         } finally {
             partFile.delete()
+        }
+    }
+
+    private suspend fun exportToMusicFolder(jobId: Long, track: Track, file: File) {
+        val codec = withContext(Dispatchers.IO) { AudioCodec.of(file) }
+        Log.i(TAG, "${track.storageId} exporting $codec")
+        val cover = coverForTag(track)
+        if (codec == AudioCodec.Mp3) {
+            exporter.placeInMusicFolder(file, track, cover)
+            return
+        }
+        val mp3File = withContext(Dispatchers.IO) { File.createTempFile("transcode", ".mp3", context.cacheDir) }
+        try {
+            setState(jobId, DownloadState.Converting(null))
+            transcoder.transcode(file, mp3File, progressReporter(jobId))
+            exporter.placeInMusicFolder(mp3File, track, cover)
+        } finally {
+            mp3File.delete()
+        }
+    }
+
+    private suspend fun coverForTag(track: Track): ByteArray? {
+        val local = cache.localCover(track, isLarge = true) ?: cache.localCover(track)
+        val url = track.largeCoverUrl ?: track.coverUrl
+        return try {
+            when {
+                local != null -> withContext(Dispatchers.IO) { local.readBytes() }
+                url != null -> cache.downloadCover(url)
+                else -> null
+            }
+        } catch (failure: IOException) {
+            Log.w(TAG, "${track.storageId} cover for tag failed: ${failure.message}")
+            null
+        }
+    }
+
+    private fun progressReporter(jobId: Long): (Float) -> Unit {
+        var percent = -1
+        return { fraction ->
+            val newPercent = (fraction * 100).toInt()
+            if (newPercent != percent) {
+                percent = newPercent
+                _jobs.update { jobs ->
+                    jobs.map { job ->
+                        if (job.id != jobId) return@map job
+                        when (job.state) {
+                            is DownloadState.Running -> job.copy(state = DownloadState.Running(fraction))
+                            is DownloadState.Converting -> job.copy(state = DownloadState.Converting(fraction))
+                            else -> job
+                        }
+                    }
+                }
+            }
         }
     }
 

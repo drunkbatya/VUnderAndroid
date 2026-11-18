@@ -3,6 +3,8 @@ FROM eclipse-temurin:21-jdk-noble AS builder
 ARG CMDLINE_TOOLS_VERSION=16111833
 ARG PLATFORM=android-37.0
 ARG BUILD_TOOLS=37.0.0
+ARG NDK=30.0.16248370
+ARG CMAKE=4.1.2
 
 ENV ANDROID_HOME=/opt/android-sdk
 ENV PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
@@ -17,7 +19,7 @@ RUN unzip -q /tmp/cmdline-tools.zip -d "$ANDROID_HOME/cmdline-tools"
 RUN mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
 RUN rm /tmp/cmdline-tools.zip
 RUN yes | sdkmanager --licenses > /dev/null
-RUN sdkmanager "platforms;${PLATFORM}" "build-tools;${BUILD_TOOLS}" "platform-tools"
+RUN sdkmanager "platforms;${PLATFORM}" "build-tools;${BUILD_TOOLS}" "platform-tools" "ndk;${NDK}" "cmake;${CMAKE}"
 RUN chmod -R a+rwX "$ANDROID_HOME"
 
 RUN git config --system --add safe.directory '*'

@@ -14,9 +14,14 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStoreFile
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.drunkbatya.vunder.BuildConfig
 import com.drunkbatya.vunder.R
 import com.drunkbatya.vunder.core.di.ApplicationScope
+import com.drunkbatya.vunder.core.network.NetworkMonitor
+import com.drunkbatya.vunder.core.settings.SettingsRepository
+import com.drunkbatya.vunder.core.settings.Toggle
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.IOException
 import javax.inject.Inject
@@ -29,6 +34,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -53,6 +61,8 @@ class Updater @Inject constructor(
     @ApplicationContext private val context: Context,
     @ApplicationScope private val scope: CoroutineScope,
     private val httpClient: OkHttpClient,
+    private val network: NetworkMonitor,
+    private val settingsRepository: SettingsRepository,
 ) {
     private val dataStore = PreferenceDataStoreFactory.create { context.preferencesDataStoreFile("update") }
     private val installedVersion = ReleaseVersion.parse(BuildConfig.VERSION_NAME) ?: ReleaseVersion(emptyList())
@@ -60,9 +70,27 @@ class Updater @Inject constructor(
     private val _state = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val state: StateFlow<UpdateState> = _state.asStateFlow()
     private var job: Job? = null
+    private var watcher: Job? = null
     private val downloadManager = context.getSystemService(DownloadManager::class.java)
 
-    fun checkOnLaunch() {
+    fun watch() {
+        if (watcher != null) return
+        val processLifecycle = ProcessLifecycleOwner.get().lifecycle
+        watcher = scope.launch {
+            combine(
+                processLifecycle.currentStateFlow,
+                network.connectivity,
+                settingsRepository.settings,
+            ) { lifecycleState, connectivity, settings ->
+                lifecycleState.isAtLeast(Lifecycle.State.STARTED) && connectivity.isConnected && settings[Toggle.AutoUpdateCheck]
+            }
+                .distinctUntilChanged()
+                .filter { it }
+                .collect { checkIfDue() }
+        }
+    }
+
+    private fun checkIfDue() {
         if (job?.isActive == true) return
         job = scope.launch {
             val preferences = dataStore.data.first()
@@ -73,7 +101,7 @@ class Updater @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Log.e(TAG, "launch check failed: ${e.message}")
+                Log.e(TAG, "auto check failed: ${e.message}")
                 return@launch
             } ?: return@launch
             if (release.tag == preferences[skippedTagKey]) {

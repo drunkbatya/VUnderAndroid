@@ -17,6 +17,7 @@
     <string name="settings_cancel">Cancel</string>
     <string name="settings_version">Version</string>
     <string name="settings_check_for_updates">Check for updates</string>
+    <string name="settings_auto_update_check">Check for updates automatically</string>
     <string name="settings_section_cache">Cache</string>
     <string name="settings_saved_tracks_size">Saved tracks size</string>
     <string name="settings_remove_saved_tracks">Remove all saved tracks</string>

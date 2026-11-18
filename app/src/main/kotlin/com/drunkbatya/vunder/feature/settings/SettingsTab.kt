@@ -85,6 +85,8 @@ fun SettingsTab(viewModel: SettingsViewModel = hiltViewModel()) {
                 colors = rowColors(),
             )
             RowDivider()
+            ToggleRow(Toggle.AutoUpdateCheck, R.string.settings_auto_update_check, current, viewModel::setToggle)
+            RowDivider()
             ActionRow(
                 R.string.settings_check_for_updates,
                 enabled = !current.isCheckingForUpdates,
@@ -165,15 +167,20 @@ private fun ToggleSection(
     SettingsSection(title) {
         toggles.forEachIndexed { index, (toggle, label) ->
             if (index > 0) RowDivider()
-            val isOn = state.settings[toggle]
-            ListItem(
-                headlineContent = { Text(stringResource(label)) },
-                trailingContent = { Switch(checked = isOn, onCheckedChange = null) },
-                colors = rowColors(),
-                modifier = Modifier.toggleable(value = isOn, role = Role.Switch) { onToggle(toggle, it) },
-            )
+            ToggleRow(toggle, label, state, onToggle)
         }
     }
+}
+
+@Composable
+private fun ToggleRow(toggle: Toggle, @StringRes label: Int, state: SettingsUiState, onToggle: (Toggle, Boolean) -> Unit) {
+    val isOn = state.settings[toggle]
+    ListItem(
+        headlineContent = { Text(stringResource(label)) },
+        trailingContent = { Switch(checked = isOn, onCheckedChange = null) },
+        colors = rowColors(),
+        modifier = Modifier.toggleable(value = isOn, role = Role.Switch) { onToggle(toggle, it) },
+    )
 }
 
 @Composable

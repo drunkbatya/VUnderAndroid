@@ -1,5 +1,6 @@
 *
 !app
+!lib
 !gradle
 !gradlew
 !build.gradle.kts
@@ -13,3 +14,4 @@
 .git/COMMIT_EDITMSG
 **/build
 **/*.swp
+**/.cxx

@@ -65,7 +65,7 @@ class MusicTabViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val activeDownloads: StateFlow<Int> = downloads.jobs
-        .map { jobs -> jobs.count { !it.state.isFinished } }
+        .map { jobs -> jobs.count { it.kind.isAudio && !it.state.isFinished } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     private val root: MusicRoute.Root?

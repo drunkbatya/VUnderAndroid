@@ -13,7 +13,7 @@ class UpdateViewModel @Inject constructor(private val updater: Updater) : ViewMo
     val state: StateFlow<UpdateState> = updater.state
 
     init {
-        updater.checkOnLaunch()
+        updater.watch()
     }
 
     fun skip(release: AppRelease) = updater.skip(release)

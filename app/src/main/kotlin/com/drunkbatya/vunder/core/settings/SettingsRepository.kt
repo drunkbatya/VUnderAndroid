@@ -29,7 +29,8 @@ enum class Toggle(storageKey: String, val default: Boolean) {
     Shuffle("player_shuffle", false),
     PreferHls("prefer_hls", true),
     MarkAsRead("messages_mark_as_read", true),
-    LongPoll("long_poll", true);
+    LongPoll("long_poll", true),
+    AutoUpdateCheck("update_check_auto", true);
 
     val key = booleanPreferencesKey(storageKey)
 }

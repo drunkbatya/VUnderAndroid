@@ -29,6 +29,7 @@ android {
     namespace = "com.drunkbatya.vunder"
     compileSdk = 37
     buildToolsVersion = "37.0.0"
+    ndkVersion = "30.0.16248370"
 
     defaultConfig {
         applicationId = "com.drunkbatya.vunder"
@@ -36,6 +37,17 @@ android {
         targetSdk = 37
         versionCode = releaseVersionCode
         versionName = releaseVersionName
+
+        ndk {
+            abiFilters += "arm64-v8a"
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "4.1.2"
+        }
     }
 
     signingConfigs {

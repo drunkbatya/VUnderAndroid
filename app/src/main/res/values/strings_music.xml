@@ -65,6 +65,8 @@
     <string name="downloads_waiting">%1$s: waiting</string>
     <string name="downloads_running">%1$s: downloading</string>
     <string name="downloads_running_percent">%1$s: downloading %2$d%%</string>
+    <string name="downloads_converting">%1$s: converting to mp3</string>
+    <string name="downloads_converting_percent">%1$s: converting to mp3 %2$d%%</string>
     <string name="downloads_saved_offline">Saved offline</string>
     <string name="downloads_saved_icon">Icon saved</string>
     <string name="downloads_saved_cover">Cover saved</string>

@@ -185,7 +185,7 @@ class AudioCache @Inject constructor(
 
     private companion object {
         const val TAG = "AudioCache"
-        const val AUDIO_EXTENSION = "mp3"
+        const val AUDIO_EXTENSION = "audio"
         const val CHUNK_BYTES = 65_536
     }
 }

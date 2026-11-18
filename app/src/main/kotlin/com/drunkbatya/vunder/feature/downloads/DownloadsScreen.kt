@@ -87,8 +87,11 @@ private fun DownloadRow(job: DownloadJob, onCancel: () -> Unit) {
                 }
             }
             val state = job.state
-            if (state is DownloadState.Running) {
-                val fraction = state.fraction
+            if (state is DownloadState.Running || state is DownloadState.Converting) {
+                val fraction = when (state) {
+                    is DownloadState.Running -> state.fraction
+                    is DownloadState.Converting -> state.fraction
+                }
                 if (fraction != null) {
                     LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth())
                 } else {
@@ -96,7 +99,7 @@ private fun DownloadRow(job: DownloadJob, onCancel: () -> Unit) {
                 }
             }
         }
-        if (!job.state.isFinished && job.kind != DownloadKind.Cover && job.kind != DownloadKind.Icon) {
+        if (!job.state.isFinished && job.kind.isAudio) {
             IconButton(onClick = onCancel) {
                 Icon(Icons.Rounded.Cancel, contentDescription = stringResource(R.string.downloads_cancel))
             }
@@ -111,6 +114,8 @@ private fun statusText(job: DownloadJob): String {
         DownloadState.Queued -> stringResource(R.string.downloads_waiting, kind)
         is DownloadState.Running -> state.fraction?.let { stringResource(R.string.downloads_running_percent, kind, (it * 100).toInt()) }
             ?: stringResource(R.string.downloads_running, kind)
+        is DownloadState.Converting -> state.fraction?.let { stringResource(R.string.downloads_converting_percent, kind, (it * 100).toInt()) }
+            ?: stringResource(R.string.downloads_converting, kind)
         DownloadState.Done -> when (job.kind) {
             DownloadKind.Cache -> stringResource(R.string.downloads_saved_offline)
             DownloadKind.MusicFolder -> stringResource(R.string.downloads_saved_music_folder, TrackExporter.fileName(job.track))
